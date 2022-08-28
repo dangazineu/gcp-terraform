@@ -1,0 +1,70 @@
+#!/bin/bash
+
+set -e
+
+if [ -z "$GCP_BILLING_ACCOUNT_ID" ] ; then
+  echo "This script requires a \$GCP_BILLING_ACCOUNT_ID variable to be set"
+  exit 1
+fi
+
+if [ -z "$GCP_PROJECT_ID_PREFIX" ] ; then
+  echo "This script requires a \$GCP_PROJECT_ID_PREFIX variable to be set"
+  exit 1
+fi
+
+#################
+# PROJECT SETUP #
+#################
+
+PROJECT_ID=$GCP_PROJECT_ID_PREFIX-$RANDOM$RANDOM
+echo "Will create project $PROJECT_ID"
+gcloud projects create $PROJECT_ID --no-enable-cloud-apis
+gcloud beta billing projects link $PROJECT_ID --billing-account=$GCP_BILLING_ACCOUNT_ID
+gcloud config set project $PROJECT_ID
+export TF_VAR_PROJECT_ID=$PROJECT_ID
+
+#########################
+# SERVICE ACCOUNT SETUP #
+#########################
+gcloud services enable iam.googleapis.com
+
+SERVICE_ACCOUNT_NAME="terraformer"
+SERVICE_ACCOUNT_EMAIL="$SERVICE_ACCOUNT_NAME@$PROJECT_ID.iam.gserviceaccount.com"
+
+gcloud iam service-accounts create $SERVICE_ACCOUNT_NAME \
+    --description="This service account has the ability to terraform the project"
+
+SERVICE_ACCOUNT_FILE="/tmp/$PROJECT_ID-$SERVICE_ACCOUNT_NAME.json"
+gcloud iam service-accounts keys create $SERVICE_ACCOUNT_FILE \
+      --iam-account=$SERVICE_ACCOUNT_EMAIL
+
+export TF_VAR_SERVICE_ACCOUNT_EMAIL=$SERVICE_ACCOUNT_EMAIL
+export TF_VAR_SERVICE_ACCOUNT_KEY_LOCATION=$SERVICE_ACCOUNT_FILE
+
+################################################
+# PERMISSIONS REQUIRED FOR THIS SPECIFIC SETUP #
+################################################
+# The APIs and roles enables in this section will vary, depending on what infrastructure we are building.
+
+gcloud services enable compute.googleapis.com
+gcloud projects add-iam-policy-binding $PROJECT_ID --member="serviceAccount:$SERVICE_ACCOUNT_EMAIL" --role='roles/compute.admin'
+#gcloud projects add-iam-policy-binding $PROJECT_ID  --member="serviceAccount:$SERVICE_ACCOUNT_EMAIL" --role='roles/iam.serviceAccountUser'
+
+#########
+# APPLY #
+#########
+terraform validate
+terraform apply
+
+echo "Finished, if you haven't sourced this script, run the following commands now:"
+echo "export TF_VAR_PROJECT_ID=$PROJECT_ID"
+echo "export TF_VAR_SERVICE_ACCOUNT_EMAIL=$SERVICE_ACCOUNT_EMAIL"
+echo "export TF_VAR_SERVICE_ACCOUNT_KEY_LOCATION=$SERVICE_ACCOUNT_FILE"
+echo ""
+echo ""
+echo "To connect to the VM instance you just created, run the command:"
+echo "gcloud compute ssh --zone 'us-central1-c' 'terraform-instance'"
+echo ""
+echo ""
+echo "When you're done, run the following command:"
+echo "gcloud projects delete $PROJECT_ID"
