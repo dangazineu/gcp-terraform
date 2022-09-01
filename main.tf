@@ -7,54 +7,73 @@ terraform {
   }
 }
 
-variable "PROJECT_ID" {
+variable "SUFFIX" {
   type = string
-  description = "This is the GCP PROJECT_ID used by this config"
+  description = "Override this value to create unique project names and prevent clashing."
+  default = ""
 }
 
-variable "SERVICE_ACCOUNT_KEY_LOCATION" {
+variable "BILLING_ACCOUNT" {
   type = string
-  description = "The location of the service account key"
+  description = "The billing account ID to be associated with the project."
 }
 
-variable "SERVICE_ACCOUNT_EMAIL" {
+variable "FOLDER_ID" {
   type = string
-  description = "The full service account email"
+  description = "The folder_id for the location where the project should be created."
 }
 
 provider "google" {
-  credentials = file(var.SERVICE_ACCOUNT_KEY_LOCATION)
-  project = var.PROJECT_ID
   region  = "us-central1"
   zone    = "us-central1-c"
 }
 
-resource "google_compute_network" "vpc_network" {
-  name = "terraform-network"
+data "google_billing_account" "acct" {
+  billing_account = var.BILLING_ACCOUNT
+  open = true
+}
 
+resource "google_project" "gcp_project" {
+  name       = "terraform-project${var.SUFFIX}"
+  project_id = "terraform-project${var.SUFFIX}"
+  folder_id = var.FOLDER_ID
+  billing_account = data.google_billing_account.acct.id
+  auto_create_network = false
+}
+
+resource "google_project_service" "compute_api" {
+  project = google_project.gcp_project.project_id
+  service = "compute.googleapis.com"
+  disable_dependent_services = true
+  depends_on = [google_project.gcp_project]
+}
+
+resource "google_compute_network" "vpc_network" {
+  project = google_project.gcp_project.project_id
+  name = "terraform-network"
+  depends_on = [google_project_service.compute_api]
 }
 
 resource "google_compute_instance" "vm_instance" {
+  project = google_project.gcp_project.project_id
   name         = "terraform-instance"
   machine_type = "e2-standard-2"
   tags = ["terraform"]
-  service_account {
-    email = var.SERVICE_ACCOUNT_EMAIL
-    scopes = []
-  }
   boot_disk {
     initialize_params {
       image = "debian-cloud/debian-11"
     }
   }
-
   network_interface {
     network = google_compute_network.vpc_network.name
     access_config {}
   }
+
+  depends_on = [google_compute_network.vpc_network]
 }
 
 resource "google_compute_firewall" "ssh-rule" {
+  project = google_project.gcp_project.project_id
   name = "terraform-ssh"
   network = google_compute_network.vpc_network.name
   allow {
@@ -63,4 +82,5 @@ resource "google_compute_firewall" "ssh-rule" {
   }
   target_tags = ["terraform"]
   source_ranges = ["0.0.0.0/0"]
+  depends_on = [google_compute_instance.vm_instance]
 }
