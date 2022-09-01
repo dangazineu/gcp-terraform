@@ -14,10 +14,11 @@ gcloud auth login
 ```
 - Grant __Folder Admin__ role to your account at the organization level, so you can create folders:
 ```shell
-gcloud organizations add-iam-policy-binding {YOUR_ORGAZINATION_ID} \
+gcloud organizations add-iam-policy-binding {YOUR_ORGANIZATION_ID} \
 --member=user:{YOUR_EMAIL} --role=roles/resourcemanager.folderAdmin
 ```
-- Create a folder under your organization, and export its ID as an 
+- Create a folder under your organization, and export its ID (printed in command
+  output) as an 
 environment variable:
 ```shell
 gcloud resource-manager folders create \
@@ -52,7 +53,7 @@ terraform apply
 ```
 Once the script finishes, you can `ssh` into the VM you just created with the command:
 ```shell
-gcloud compute ssh --zone "us-central1-c" "terraform-instance"  --project "terraform-project${SUFFIX}"
+gcloud compute ssh --zone "us-central1-c" "terraform-instance"  --project "terraform-project${TF_VAR_SUFFIX}"
 ```
 To teardown the infrastructure, run:
 ```shell
