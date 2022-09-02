@@ -55,6 +55,13 @@ Once the script finishes, you can `ssh` into the VM you just created with the co
 ```shell
 gcloud compute ssh --zone "us-central1-c" "terraform-instance"  --project "terraform-project${TF_VAR_SUFFIX}"
 ```
+
+Once connected, watch the installation script progress:
+```shell
+ tail -f /startup.out 
+```
+Once Tomcat Service is started,  `curl localhost:8080` will return the main Tomcat page.
+
 To teardown the infrastructure, run:
 ```shell
 terraform destroy

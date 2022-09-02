@@ -70,6 +70,61 @@ resource "google_compute_instance" "vm_instance" {
     access_config {}
   }
 
+  # long term using startup-script-url pointing to GCS is better
+  metadata_startup_script = <<EOT
+    ENV DEBIAN_FRONTEND=noninteractive
+
+    date >> /startup.out
+    echo "INITIALIZING VM WITH JAVA/TOMCAT STACK" >> startup.out
+
+    # Install Java
+    apt-get install -y wget apt-transport-https gnupg |& tee -a /startup.out
+    wget -O - https://packages.adoptium.net/artifactory/api/gpg/key/public | apt-key add - |& tee -a /startup.out
+    echo "deb https://packages.adoptium.net/artifactory/deb $(awk -F= '/^VERSION_CODENAME/{print$2}' /etc/os-release) main" | tee /etc/apt/sources.list.d/adoptium.list
+    apt-get update -y |& tee -a /startup.out
+    apt-get install -y temurin-11-jdk |& tee -a /startup.out
+    export JAVA_HOME=/usr/bin/java
+
+    # Install Tomcat
+    useradd -m -d /opt/tomcat -U -s /bin/false tomcat |& tee -a /startup.out
+
+    echo "current dir\n" >> /startup.out
+    pwd >> /startup.out
+    cd /tmp
+    wget https://downloads.apache.org/tomcat/tomcat-10/v10.0.23/bin/apache-tomcat-10.0.23.tar.gz |& tee -a /startup.out
+    tar -xzvf apache-tomcat-10.0.23.tar.gz -C /opt/tomcat --strip-components=1 |& tee -a /startup.out
+    chown -R tomcat:tomcat /opt/tomcat/
+    chmod -R u+x /opt/tomcat/bin
+
+    # Set Tomcat as a service
+    cat << EOTOMCATCONFIG > /etc/systemd/system/tomcat.service
+      [Unit]
+      Description="Tomcat Service"
+      After=network.target
+      [Service]
+      Type=forking
+      User=tomcat
+      Group=tomcat
+      Environment="JAVA_HOME=/usr/lib/jvm/temurin-11-jdk-amd64"
+      Environment="JAVA_OPTS=-Djava.security.egd=file:///dev/urandom"
+      Environment="CATALINA_BASE=/opt/tomcat"
+      Environment="CATALINA_HOME=/opt/tomcat"
+      Environment="CATALINA_PID=/opt/tomcat/temp/tomcat.pid"
+      Environment="CATALINA_OPTS=-Xms512M -Xmx1024M -server -XX:+UseParallelGC"
+      ExecStart=/opt/tomcat/bin/startup.sh
+      ExecStop=/opt/tomcat/bin/shutdown.sh
+      [Install]
+      WantedBy=multi-user.target
+EOTOMCATCONFIG
+
+    systemctl start tomcat |& tee -a /startup.out
+    systemctl enable tomcat |& tee -a /startup.out
+    systemctl status tomcat |& tee -a /startup.out
+
+
+
+  EOT
+
   depends_on = [google_compute_network.vpc_network]
 }
 
