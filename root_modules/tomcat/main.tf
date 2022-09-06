@@ -20,19 +20,13 @@ resource "google_project_service" "storage_api" {
 # API setup - END #
 ###################
 
-# Ensures the sample.war file exists locally to be uploaded to GCS
-resource "null_resource" "sample-app" {
-  provisioner "local-exec" {
-    command = "wget -O /tmp/sample.war https://tomcat.apache.org/tomcat-7.0-doc/appdev/sample/sample.war"
-  }
-}
 module "staged_binary" {
-  source        = "../../modules/binary_staging_storage_bucket"
+  source        = "./modules/binary_staging_storage_bucket"
   project_id    = var.project_id
   region        = var.region
-  file_name     = "sample.war"
-  file_location = "/tmp/sample.war"
-  depends_on    = [google_project_service.storage_api, null_resource.sample-app]
+  file_name     = "ROOT.war"
+  file_location = var.war_filepath
+  depends_on    = [google_project_service.storage_api]
 }
 
 data "template_file" "startup_script" {
@@ -43,7 +37,7 @@ data "template_file" "startup_script" {
 }
 
 module "tomcat_cluster" {
-  source          = "../../modules/http_accessible_mig"
+  source          = "./modules/http_accessible_mig"
   project_id      = var.project_id
   region          = var.region
   deployment_name = "tomcat-"

@@ -3,6 +3,11 @@ variable "project_id" {
   description = "The project to deploy resources to."
 }
 
+variable "war_filepath" {
+  type = string
+  description = "Where to find the war file to deploy on the local filesystem."
+}
+
 variable "region" {
   type        = string
   description = "GCP region to deploy resources to."
