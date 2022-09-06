@@ -11,10 +11,10 @@ variable "project_id" {
 
 variable "billing_account_id" {
   type = string
-  description = "The billing account ID to be associated with the project. Required if create_project = true."
+  description = "The billing account ID to be associated with the project."
 }
 
 variable "folder_id" {
   type = string
-  description = "The folder_id for the location where the project should be created. Required if create_project = true."
+  description = "The folder_id for the location where the project should be created."
 }
