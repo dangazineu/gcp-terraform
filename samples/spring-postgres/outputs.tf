@@ -7,11 +7,11 @@ output "application_url" {
 }
 
 output "health_check_results" {
-  value = "Wait for VMs to show as healthy in this page: https://console.cloud.google.com/compute/instanceGroups/details/${local.region}/${module.app_cluster.name}?project=${local.project_id}"
+  value = "Wait for VMs to show as healthy in this page: https://console.cloud.google.com/compute/instanceGroups/details/${var.region}/${module.app_cluster.name}?project=${module.gcp_project.project_id}"
 }
 
 output "project_id" {
-  value = google_project.gcp_project.project_id
+  value = module.gcp_project.project_id
 }
 
 output "binary_gs_url" {
