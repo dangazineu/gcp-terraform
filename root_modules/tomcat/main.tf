@@ -21,7 +21,8 @@ resource "google_project_service" "storage_api" {
 ###################
 
 module "staged_binary" {
-  source        = "./modules/binary_staging_storage_bucket"
+  source        = "github.com/danielgazineu/gcp-terraform//modules/binary_staging_storage_bucket"
+  bucket_name_prefix = "tomcat-"
   project_id    = var.project_id
   region        = var.region
   file_name     = "ROOT.war"
@@ -37,7 +38,7 @@ data "template_file" "startup_script" {
 }
 
 module "tomcat_cluster" {
-  source          = "./modules/http_accessible_mig"
+  source          = "github.com/danielgazineu/gcp-terraform//modules/http_accessible_mig"
   project_id      = var.project_id
   region          = var.region
   deployment_name = "tomcat-"
