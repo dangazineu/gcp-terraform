@@ -4,7 +4,7 @@ variable "project_id" {
 }
 
 variable "war_filepath" {
-  type = string
+  type        = string
   description = "Where to find the war file to deploy on the local filesystem."
 }
 

@@ -21,13 +21,13 @@ resource "google_project_service" "storage_api" {
 ###################
 
 module "staged_binary" {
-  source        = "github.com/danielgazineu/gcp-terraform//modules/binary_staging_storage_bucket"
+  source             = "github.com/danielgazineu/gcp-terraform//modules/binary_staging_storage_bucket"
   bucket_name_prefix = "tomcat-"
-  project_id    = var.project_id
-  region        = var.region
-  file_name     = "ROOT.war"
-  file_location = var.war_filepath
-  depends_on    = [google_project_service.storage_api]
+  project_id         = var.project_id
+  region             = var.region
+  file_name          = "ROOT.war"
+  file_location      = var.war_filepath
+  depends_on         = [google_project_service.storage_api]
 }
 
 data "template_file" "startup_script" {
@@ -38,10 +38,11 @@ data "template_file" "startup_script" {
 }
 
 module "tomcat_cluster" {
-  source          = "github.com/danielgazineu/gcp-terraform//modules/http_accessible_mig"
-  project_id      = var.project_id
-  region          = var.region
-  deployment_name = "tomcat-"
-  startup_script  = data.template_file.startup_script.rendered
-  depends_on      = [google_project_service.compute_api]
+  source            = "github.com/danielgazineu/gcp-terraform//modules/http_accessible_mig"
+  project_id        = var.project_id
+  region            = var.region
+  deployment_name   = "tomcat-"
+  startup_script    = data.template_file.startup_script.rendered
+  depends_on        = [google_project_service.compute_api, module.staged_binary]
+  health_check_path = "/healthz/"
 }
