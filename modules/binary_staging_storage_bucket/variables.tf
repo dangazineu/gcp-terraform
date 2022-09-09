@@ -8,9 +8,9 @@ variable "region" {
 }
 
 variable "bucket_name_prefix" {
-  type = string
+  type        = string
   description = "An optional prefix used for all resource names deployed by this module"
-  default = ""
+  default     = ""
 }
 
 variable "file_name" {

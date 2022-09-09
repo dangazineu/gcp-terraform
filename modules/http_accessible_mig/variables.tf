@@ -1,7 +1,7 @@
 variable "http_port" {
-  type = number
+  type        = number
   description = "The http port where Tomcat will be listening"
-  default = 8080
+  default     = 8080
 }
 
 variable "project_id" {
@@ -14,18 +14,18 @@ variable "region" {
 }
 
 variable "deployment_name" {
-  type = string
+  type        = string
   description = "An optional prefix used for all resource names deployed by this module"
-  default = ""
+  default     = ""
 }
 
 variable "startup_script" {
-  type = string
+  type        = string
   description = "The path for a startup script to be executed by each VM as they come up"
-  default = ""
+  default     = ""
 }
 
 variable "health_check_path" {
-  type = string
+  type    = string
   default = "/"
 }
