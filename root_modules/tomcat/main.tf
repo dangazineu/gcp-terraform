@@ -31,7 +31,7 @@ module "staged_binary" {
 }
 
 data "template_file" "startup_script" {
-  template = file("tomcat.sh.tpl")
+  template = file("${path.module}/tomcat.sh.tpl")
   vars = {
     STAGED_BINARY = module.staged_binary.gs_url
   }
