@@ -21,7 +21,7 @@ resource "google_project_service" "storage_api" {
 ###################
 
 module "staged_binary" {
-  source             = "../binary_staging_storage_bucket"
+  source             = "../../modules/binary_staging_storage_bucket"
   bucket_name_prefix = "tomcat-"
   project_id         = var.project_id
   region             = var.region
@@ -38,7 +38,7 @@ data "template_file" "startup_script" {
 }
 
 module "vpc_with_nat" {
-  source          = "../vpc_with_nat"
+  source          = "../../modules/vpc_with_nat"
   project_id      = var.project_id
   region          = var.region
   deployment_name = "tomcat-"
@@ -46,7 +46,7 @@ module "vpc_with_nat" {
 }
 
 module "tomcat_cluster" {
-  source            = "../http_accessible_mig"
+  source            = "../../modules/http_accessible_mig"
   project_id        = var.project_id
   region            = var.region
   deployment_name   = "tomcat-"
