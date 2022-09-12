@@ -22,7 +22,7 @@ resource "google_project_service" "storage_api" {
 
 module "staged_binary" {
   source             = "../binary_staging_storage_bucket"
-  bucket_name_prefix = "tomcatjay-"
+  bucket_name_prefix = "tomcat-"
   project_id         = var.project_id
   region             = var.region
   file_name          = "ROOT.war"
