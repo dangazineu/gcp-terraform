@@ -25,10 +25,24 @@ resource "google_project_service" "sqladmin_api" {
 # API setup - END #
 ###################
 
+module "vpc_with_nat" {
+  source          = "../../modules/vpc_with_nat"
+  project_id      = var.project_id
+  region          = var.region
+  deployment_name = "spring-app-"
+  depends_on      = [google_project_service.compute_api]
+}
+
+module "private_service_access" {
+  source      = "GoogleCloudPlatform/sql-db/google//modules/private_service_access"
+  project_id  = var.project_id
+  vpc_network = module.vpc_with_nat.network_name
+}
+
 module "db" {
   source               = "GoogleCloudPlatform/sql-db/google//modules/postgresql"
   version              = "12.0.0"
-  name                 = "postgres-db"
+  name                 = "spring-app-postgres-db"
   random_instance_name = true
   database_version     = "POSTGRES_9_6"
   project_id           = var.project_id
@@ -39,17 +53,13 @@ module "db" {
   deletion_protection = false
 
   ip_configuration = {
-    ipv4_enabled       = true
-    private_network    = null
-    require_ssl        = true
-    allocated_ip_range = null
-    authorized_networks = [{
-      name  = "sample-gcp-health-checkers-range"
-      value = "130.211.0.0/28"
-      }
-    ]
+    ipv4_enabled        = false
+    private_network     = module.vpc_with_nat.network_self_link
+    require_ssl         = true
+    allocated_ip_range  = null
+    authorized_networks = []
   }
-  depends_on = [google_project_service.sqladmin_api]
+  depends_on = [google_project_service.sqladmin_api, module.private_service_access.peering_completed]
 }
 
 module "staged_binary" {
@@ -71,14 +81,6 @@ data "template_file" "startup_script" {
     DB_CONNECTION_NAME = module.db.instance_connection_name
     DB_PROJECT_ID      = var.project_id
   }
-}
-
-module "vpc_with_nat" {
-  source          = "../../modules/vpc_with_nat"
-  project_id      = var.project_id
-  region          = var.region
-  deployment_name = "spring-app-"
-  depends_on      = [google_project_service.compute_api]
 }
 
 module "app_cluster" {
