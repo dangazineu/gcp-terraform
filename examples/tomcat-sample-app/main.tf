@@ -5,7 +5,7 @@ resource "null_resource" "sample-app" {
 }
 
 module "tomcat" {
-  source       = "../../root_modules/tomcat"
+  source       = "../../modules/tomcat"
   project_id   = var.project_id
   region       = var.region
   zone         = var.zone
