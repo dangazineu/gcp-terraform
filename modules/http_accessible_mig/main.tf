@@ -3,51 +3,12 @@ locals {
   mig_name = "${var.deployment_name}vm-mig"
 }
 
-module "vpc" {
-  source       = "terraform-google-modules/network/google"
-  project_id   = var.project_id
-  network_name = "${var.deployment_name}network-default"
-
-  subnets = [
-    {
-      subnet_name   = "${var.deployment_name}subnetwork-default"
-      subnet_ip     = "10.127.0.0/20"
-      subnet_region = var.region
-    }
-  ]
-
-  firewall_rules = [
-    {
-      name        = "${var.deployment_name}firewall-allow-incoming-ssh-from-iap"
-      direction   = "INGRESS"
-      ranges      = ["35.235.240.0/20"]
-      target_tags = ["ssh-iap"]
-      allow = [{
-        protocol = "tcp"
-        ports    = ["22"]
-      }]
-    },
-  ]
-}
-
-module "cloud_router" {
-  source  = "terraform-google-modules/cloud-router/google"
-  project = var.project_id
-  name    = "${var.deployment_name}router"
-  network = module.vpc.network_self_link
-  region  = var.region
-
-  nats = [{
-    name = "${var.deployment_name}router-nat"
-  }]
-}
-
 module "mig_template" {
   project_id           = var.project_id
   source               = "terraform-google-modules/vm/google//modules/instance_template"
   version              = "7.8.0"
-  network              = module.vpc.network_self_link
-  subnetwork           = module.vpc.subnets_self_links[0]
+  network              = var.network
+  subnetwork           = var.subnet
   source_image_family  = "debian-11"
   source_image_project = "debian-cloud"
   service_account = {
@@ -76,8 +37,8 @@ module "mig" {
       name = "http",
       port = var.http_port
   }]
-  network    = module.vpc.network_self_link
-  subnetwork = module.vpc.subnets_self_links[0]
+  network    = var.network
+  subnetwork = var.subnet
 
   health_check = {
     type                = "http"
@@ -114,7 +75,7 @@ module "gce-lb-http" {
   version           = "6.3.0"
   name              = "${var.deployment_name}http-lb"
   project           = var.project_id
-  firewall_networks = [module.vpc.network_name]
+  firewall_networks = [var.network]
   target_tags       = ["${var.deployment_name}app"]
 
   backends = {
