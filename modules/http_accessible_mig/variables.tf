@@ -29,3 +29,13 @@ variable "health_check_path" {
   type    = string
   default = "/"
 }
+
+variable "network" {
+  type        = string
+  description = "Identifier for the network to attach the mig to."
+}
+
+variable "subnet" {
+  type        = string
+  description = "Identifier for the network subnet to attach the mig to."
+}

@@ -37,6 +37,14 @@ data "template_file" "startup_script" {
   }
 }
 
+module "vpc_with_nat" {
+  source          = "../vpc_with_nat"
+  project_id      = var.project_id
+  region          = var.region
+  deployment_name = "tomcat-"
+  depends_on      = [google_project_service.compute_api]
+}
+
 module "tomcat_cluster" {
   source            = "../http_accessible_mig"
   project_id        = var.project_id
@@ -45,4 +53,6 @@ module "tomcat_cluster" {
   startup_script    = data.template_file.startup_script.rendered
   depends_on        = [google_project_service.compute_api, module.staged_binary]
   health_check_path = "/healthz/"
+  network           = module.vpc_with_nat.network_self_link
+  subnet            = module.vpc_with_nat.subnet_self_link
 }
