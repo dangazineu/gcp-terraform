@@ -3,59 +3,51 @@ locals {
   mig_name = "${var.deployment_name}vm-mig"
 }
 
-resource "google_compute_network" "default" {
-  project                 = var.project_id
-  name                    = "${var.deployment_name}network-default"
-  auto_create_subnetworks = false
+module "vpc" {
+  source       = "terraform-google-modules/network/google"
+  project_id   = var.project_id
+  network_name = "${var.deployment_name}network-default"
+
+  subnets = [
+    {
+      subnet_name   = "${var.deployment_name}subnetwork-default"
+      subnet_ip     = "10.127.0.0/20"
+      subnet_region = var.region
+    }
+  ]
+
+  firewall_rules = [
+    {
+      name        = "${var.deployment_name}firewall-allow-incoming-ssh-from-iap"
+      direction   = "INGRESS"
+      ranges      = ["35.235.240.0/20"]
+      target_tags = ["ssh-iap"]
+      allow = [{
+        protocol = "tcp"
+        ports    = ["22"]
+      }]
+    },
+  ]
 }
 
-resource "google_compute_subnetwork" "default" {
-  project                  = var.project_id
-  name                     = "${var.deployment_name}subnetwork-default"
-  ip_cidr_range            = "10.127.0.0/20"
-  network                  = google_compute_network.default.self_link
-  region                   = var.region
-  private_ip_google_access = true
-}
-
-resource "google_compute_router" "default" {
+module "cloud_router" {
+  source  = "terraform-google-modules/cloud-router/google"
   project = var.project_id
-  name    = "${var.deployment_name}router-default"
-  network = google_compute_network.default.self_link
+  name    = "${var.deployment_name}router"
+  network = module.vpc.network_self_link
   region  = var.region
-}
 
-module "cloud-nat" {
-  source     = "terraform-google-modules/cloud-nat/google"
-  version    = "1.4.0"
-  router     = google_compute_router.default.name
-  project_id = var.project_id
-  region     = var.region
-  name       = "${var.deployment_name}cloud-nat"
-}
-
-## Allow incoming access to our instance via
-## port 22, from the IAP servers
-resource "google_compute_firewall" "allow-incoming-ssh-from-iap" {
-  project = var.project_id
-  name    = "${var.deployment_name}firewall-allow-incoming-ssh-from-iap"
-  network = google_compute_network.default.self_link
-
-  direction = "INGRESS"
-  allow {
-    protocol = "tcp"
-    ports    = ["22"]
-  }
-  source_ranges = ["35.235.240.0/20"]
-  target_tags   = ["ssh-iap"]
+  nats = [{
+    name = "${var.deployment_name}router-nat"
+  }]
 }
 
 module "mig_template" {
   project_id           = var.project_id
   source               = "terraform-google-modules/vm/google//modules/instance_template"
   version              = "7.8.0"
-  network              = google_compute_network.default.self_link
-  subnetwork           = google_compute_subnetwork.default.self_link
+  network              = module.vpc.network_self_link
+  subnetwork           = module.vpc.subnets_self_links[0]
   source_image_family  = "debian-11"
   source_image_project = "debian-cloud"
   service_account = {
@@ -66,11 +58,7 @@ module "mig_template" {
   startup_script = var.startup_script
   #  data.template_file.group-startup-script.rendered
 
-  tags = [
-    module.cloud-nat.router_name,
-    "ssh-iap"
-  ]
-
+  tags = ["ssh-iap", "${var.deployment_name}app"]
 }
 
 module "mig" {
@@ -88,8 +76,8 @@ module "mig" {
       name = "http",
       port = var.http_port
   }]
-  network    = google_compute_network.default.self_link
-  subnetwork = google_compute_subnetwork.default.self_link
+  network    = module.vpc.network_self_link
+  subnetwork = module.vpc.subnets_self_links[0]
 
   health_check = {
     type                = "http"
@@ -126,8 +114,8 @@ module "gce-lb-http" {
   version           = "6.3.0"
   name              = "${var.deployment_name}http-lb"
   project           = var.project_id
-  firewall_networks = [google_compute_network.default.name]
-  target_tags       = [module.cloud-nat.router_name]
+  firewall_networks = [module.vpc.network_name]
+  target_tags       = ["${var.deployment_name}app"]
 
   backends = {
     default = {
