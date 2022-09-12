@@ -25,6 +25,18 @@ module "vpc" {
   ]
 }
 
+module "net-firewall" {
+  source                  = "terraform-google-modules/network/google//modules/fabric-net-firewall"
+  project_id              = var.project_id
+  network                 = module.vpc.network_name
+  internal_ranges_enabled = true
+  internal_allow = [
+    {
+      "protocol" : "tcp"
+    }
+  ]
+}
+
 module "cloud_router" {
   source  = "terraform-google-modules/cloud-router/google"
   project = var.project_id
