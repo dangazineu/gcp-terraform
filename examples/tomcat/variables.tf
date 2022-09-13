@@ -19,3 +19,24 @@ variable "zone" {
   description = "GCP zone to deploy resources to. Must be a zone in the chosen region."
   default     = "us-central1-c"
 }
+
+variable "create_postgres_db" {
+  type        = bool
+  description = "If true, creates private PostgreSQL DB on the VPC."
+}
+
+variable "database_name" {
+  type        = string
+  description = "Name of an extra database on the db instance."
+}
+
+variable "database_username" {
+  type        = string
+  description = "Username for an extra user on the database."
+}
+
+variable "database_password" {
+  type        = string
+  sensitive   = true
+  description = "Password for an extra user on the database."
+}
