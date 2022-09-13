@@ -33,10 +33,20 @@ module "vpc_with_nat" {
   depends_on      = [google_project_service.compute_api]
 }
 
-module "private_service_access" {
-  source      = "GoogleCloudPlatform/sql-db/google//modules/private_service_access"
-  project_id  = var.project_id
-  vpc_network = module.vpc_with_nat.network_name
+resource "google_compute_global_address" "google-managed-services-range" {
+  project       = var.project_id
+  name          = "google-managed-services-${module.vpc_with_nat.network_name}"
+  purpose       = "VPC_PEERING"
+  address_type  = "INTERNAL"
+  prefix_length = 16
+  network       = module.vpc_with_nat.network_self_link
+}
+
+# Creates the peering with the producer network.
+resource "google_service_networking_connection" "private_service_access" {
+  network                 = module.vpc_with_nat.network_self_link
+  service                 = "servicenetworking.googleapis.com"
+  reserved_peering_ranges = [google_compute_global_address.google-managed-services-range.name]
 }
 
 module "db" {
@@ -59,7 +69,7 @@ module "db" {
     allocated_ip_range  = null
     authorized_networks = []
   }
-  depends_on = [google_project_service.sqladmin_api, module.private_service_access.peering_completed]
+  depends_on = [google_project_service.sqladmin_api, google_service_networking_connection.private_service_access]
 }
 
 module "staged_binary" {
