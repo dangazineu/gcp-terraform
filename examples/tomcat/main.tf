@@ -26,7 +26,7 @@ resource "google_project_service" "sqladmin_api" {
 ###################
 
 module "vpc_with_nat" {
-  source          = "github.com/danielgazineu/gcp-terraform//modules/vpc_with_nat"
+  source          = "../../modules/vpc_with_nat"
   project_id      = var.project_id
   region          = var.region
   deployment_name = "tomcat-"
@@ -34,8 +34,8 @@ module "vpc_with_nat" {
 }
 
 module "staged_binary" {
-  source             = "github.com/danielgazineu/gcp-terraform//modules/binary_staging_storage_bucket"
-  bucket_name_prefix = "tomcatjay-"
+  source             = "../../modules/binary_staging_storage_bucket"
+  bucket_name_prefix = "tomcat-"
   project_id         = var.project_id
   region             = var.region
   file_name          = "ROOT.war"
@@ -51,7 +51,7 @@ data "template_file" "startup_script" {
 }
 
 module "tomcat_cluster" {
-  source            = "github.com/danielgazineu/gcp-terraform//modules/http_accessible_mig"
+  source            = "../../modules/http_accessible_mig"
   project_id        = var.project_id
   region            = var.region
   deployment_name   = "tomcat-"
