@@ -1,3 +1,8 @@
+resource "google_project_service" "sqladmin_api" {
+  service            = "sqladmin.googleapis.com"
+  disable_on_destroy = false
+}
+
 resource "google_compute_global_address" "google-managed-services-range" {
   count         = var.create_postgres_db ? 1 : 0
   project       = var.project_id

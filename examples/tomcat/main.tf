@@ -16,22 +16,9 @@ resource "google_project_service" "storage_api" {
   service            = "storage.googleapis.com"
   disable_on_destroy = false
 }
-
-resource "google_project_service" "sqladmin_api" {
-  service            = "sqladmin.googleapis.com"
-  disable_on_destroy = false
-}
 ###################
 # API setup - END #
 ###################
-
-module "vpc_with_nat" {
-  source          = "../../modules/vpc_with_nat"
-  project_id      = var.project_id
-  region          = var.region
-  deployment_name = "tomcat-"
-  depends_on      = [google_project_service.compute_api]
-}
 
 module "staged_binary" {
   source             = "../../modules/binary_staging_storage_bucket"
@@ -48,6 +35,14 @@ data "template_file" "startup_script" {
   vars = {
     STAGED_BINARY = module.staged_binary.gs_url
   }
+}
+
+module "vpc_with_nat" {
+  source          = "../../modules/vpc_with_nat"
+  project_id      = var.project_id
+  region          = var.region
+  deployment_name = "tomcat-"
+  depends_on      = [google_project_service.compute_api]
 }
 
 module "tomcat_cluster" {
