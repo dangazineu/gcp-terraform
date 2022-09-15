@@ -21,19 +21,23 @@ resource "google_project_service" "storage_api" {
 ###################
 
 module "staged_binary" {
-  source             = "../../modules/binary_staging_storage_bucket"
-  bucket_name_prefix = "tomcat-"
-  project_id         = var.project_id
-  region             = var.region
-  file_name          = "ROOT.war"
-  file_location      = var.war_filepath
-  depends_on         = [google_project_service.storage_api]
+  source      = "../../modules/file_storage_bucket"
+  bucket_name = "tomcat-binary-staging-storage-bucket"
+  project_id  = var.project_id
+  location    = var.region
+  files = [
+    {
+      source      = var.war_filepath
+      object_name = "ROOT.war"
+    }
+  ]
+  depends_on = [google_project_service.storage_api]
 }
 
 data "template_file" "startup_script" {
   template = file("${path.module}/tomcat.sh.tpl")
   vars = {
-    STAGED_BINARY = module.staged_binary.gs_url
+    STAGED_BINARY = module.staged_binary.gs_urls[0]
   }
 }
 
