@@ -1,5 +1,6 @@
 module "vpc" {
-  source       = "terraform-google-modules/network/google"
+  source = "terraform-google-modules/network/google"
+
   project_id   = var.project_id
   network_name = "${var.deployment_name}network-default"
 
@@ -26,9 +27,11 @@ module "vpc" {
 }
 
 module "net-firewall" {
-  source                  = "terraform-google-modules/network/google//modules/fabric-net-firewall"
-  project_id              = var.project_id
-  network                 = module.vpc.network_name
+  source = "terraform-google-modules/network/google//modules/fabric-net-firewall"
+
+  project_id = var.project_id
+  network    = module.vpc.network_name
+
   internal_ranges_enabled = true
   internal_allow = [
     {
@@ -38,7 +41,8 @@ module "net-firewall" {
 }
 
 module "cloud_router" {
-  source  = "terraform-google-modules/cloud-router/google"
+  source = "terraform-google-modules/cloud-router/google"
+
   project = var.project_id
   name    = "${var.deployment_name}router"
   network = module.vpc.network_self_link

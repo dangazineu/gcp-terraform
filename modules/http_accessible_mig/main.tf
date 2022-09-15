@@ -4,41 +4,51 @@ locals {
 }
 
 module "mig_template" {
+  source  = "terraform-google-modules/vm/google//modules/instance_template"
+  version = "7.8.0"
+
+  name_prefix          = "${var.deployment_name}mig-template"
   project_id           = var.project_id
-  source               = "terraform-google-modules/vm/google//modules/instance_template"
-  version              = "7.8.0"
-  network              = var.network
-  subnetwork           = var.subnet
   source_image_family  = "debian-11"
   source_image_project = "debian-cloud"
+  startup_script       = var.startup_script
+
   service_account = {
     email  = ""
     scopes = ["cloud-platform"]
   }
-  name_prefix    = "${var.deployment_name}mig-template"
-  startup_script = var.startup_script
-  #  data.template_file.group-startup-script.rendered
 
-  tags = ["ssh-iap", "${var.deployment_name}app"]
+  network    = var.network
+  subnetwork = var.subnet
+
+  tags = ["ssh-iap"]
 }
 
 module "mig" {
-  source              = "terraform-google-modules/vm/google//modules/mig"
-  version             = "7.8.0"
-  project_id          = var.project_id
-  instance_template   = module.mig_template.self_link
-  region              = var.region
-  hostname            = local.hostname
-  mig_name            = local.mig_name
-  target_size         = 2
-  autoscaling_enabled = false
+  source  = "terraform-google-modules/vm/google//modules/mig"
+  version = "7.8.0"
+
+  project_id        = var.project_id
+  instance_template = module.mig_template.self_link
+  region            = var.region
+  hostname          = local.hostname
+  mig_name          = local.mig_name
+
+  network    = var.network
+  subnetwork = var.subnet
+
+  autoscaling_enabled = true
+  min_replicas        = var.min_replicas
+  max_replicas        = var.max_replicas
+  autoscaling_cpu = [{
+    target = 0.5
+  }]
+
   named_ports = [
     {
       name = "http",
       port = var.http_port
   }]
-  network    = var.network
-  subnetwork = var.subnet
 
   health_check = {
     type                = "http"
@@ -55,6 +65,7 @@ module "mig" {
     host                = ""
 
   }
+
   update_policy = [
     {
       type                           = "PROACTIVE"
@@ -70,13 +81,12 @@ module "mig" {
   }]
 }
 
-module "gce-lb-http" {
-  source            = "GoogleCloudPlatform/lb-http/google"
-  version           = "6.3.0"
-  name              = "${var.deployment_name}http-lb"
-  project           = var.project_id
-  firewall_networks = [var.network]
-  target_tags       = ["${var.deployment_name}app"]
+module "http_lb" {
+  source  = "GoogleCloudPlatform/lb-http/google"
+  version = "6.3.0"
+
+  name    = "${var.deployment_name}http-lb"
+  project = var.project_id
 
   backends = {
     default = {
