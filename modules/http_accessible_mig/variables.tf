@@ -39,3 +39,15 @@ variable "subnet" {
   type        = string
   description = "Identifier for the network subnet to attach the mig to."
 }
+
+variable "min_replicas" {
+  type        = number
+  description = "Number of VMs in the MIG when fully autoscaled down."
+  default     = 1
+}
+
+variable "max_replicas" {
+  type        = number
+  description = "Number of VMs in the MIG when fully autoscaled up."
+  default     = 10
+}
