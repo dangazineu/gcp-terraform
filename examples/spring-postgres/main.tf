@@ -73,9 +73,10 @@ module "db" {
 }
 
 module "staged_binary" {
-  source     = "../../modules/file_storage_bucket"
-  project_id = var.project_id
-  location   = var.region
+  source      = "../../modules/file_storage_bucket"
+  bucket_name = "spring-app-binary-staging-storage-bucket"
+  project_id  = var.project_id
+  location    = var.region
   files = [
     {
       source      = var.app_location
