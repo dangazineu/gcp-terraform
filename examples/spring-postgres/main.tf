@@ -73,12 +73,16 @@ module "db" {
 }
 
 module "staged_binary" {
-  source        = "../../modules/binary_staging_storage_bucket"
-  project_id    = var.project_id
-  region        = var.region
-  file_name     = "app.jar"
-  file_location = var.app_location
-  depends_on    = [google_project_service.storage_api]
+  source     = "../../modules/file_storage_bucket"
+  project_id = var.project_id
+  location   = var.region
+  files = [
+    {
+      source      = var.app_location
+      object_name = "app.jar"
+    }
+  ]
+  depends_on = [google_project_service.storage_api]
 }
 
 data "template_file" "startup_script" {
