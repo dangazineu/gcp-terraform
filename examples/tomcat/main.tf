@@ -22,7 +22,7 @@ resource "google_project_service" "storage_api" {
 
 module "staged_binary" {
   source      = "../../modules/file_storage_bucket"
-  bucket_name = "tomcat-binary-staging-storage-bucket"
+  bucket_name = "${var.name}-binary-staging-storage-bucket"
   project_id  = var.project_id
   location    = var.region
   files = [
@@ -44,7 +44,7 @@ data "template_file" "startup_script" {
 module "vpc_with_nat" {
   source       = "../../modules/vpc_with_nat"
   project_id   = var.project_id
-  network_name = "tomcat"
+  network_name = var.name
 
   iap_ssh_tag                   = "iap-ssh"
   enable_default_firewall_rules = true
@@ -54,12 +54,18 @@ module "vpc_with_nat" {
 }
 
 module "tomcat_cluster" {
-  source            = "../../modules/http_accessible_mig"
-  project_id        = var.project_id
-  region            = var.region
-  deployment_name   = "tomcat-"
+  source     = "../../modules/http_accessible_mig"
+  project_id = var.project_id
+  region     = var.region
+  mig_name   = var.name
+  network    = module.vpc_with_nat.network_self_link
+
   startup_script    = data.template_file.startup_script.rendered
-  depends_on        = [google_project_service.compute_api, module.staged_binary]
+  tags              = ["iap-ssh"]
   health_check_path = "/healthz/"
-  network           = module.vpc_with_nat.network_self_link
+  http_port         = 8080
+
+  autoscaling_cpu_percent = 0.75
+
+  depends_on = [google_project_service.compute_api]
 }

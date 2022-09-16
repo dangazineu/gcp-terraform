@@ -1,27 +1,22 @@
-locals {
-  hostname = "${var.deployment_name}vm"
-  mig_name = "${var.deployment_name}vm-mig"
-}
-
 module "mig_template" {
   source  = "terraform-google-modules/vm/google//modules/instance_template"
   version = "7.8.0"
 
-  name_prefix          = "${var.deployment_name}mig-template"
+  name_prefix          = "${var.mig_name}-template"
   project_id           = var.project_id
-  source_image_family  = "debian-11"
-  source_image_project = "debian-cloud"
+  source_image_family  = var.source_image_family
+  source_image_project = var.source_image_project
   startup_script       = var.startup_script
 
   service_account = {
-    email  = ""
+    email  = var.service_account_email
     scopes = ["cloud-platform"]
   }
 
   network    = var.network
   subnetwork = var.subnet
 
-  tags = ["ssh-iap"]
+  tags = var.tags
 }
 
 module "mig" {
@@ -31,8 +26,8 @@ module "mig" {
   project_id        = var.project_id
   instance_template = module.mig_template.self_link
   region            = var.region
-  hostname          = local.hostname
-  mig_name          = local.mig_name
+  hostname          = "${var.mig_name}-vm"
+  mig_name          = var.mig_name
 
   network    = var.network
   subnetwork = var.subnet
@@ -41,7 +36,7 @@ module "mig" {
   min_replicas        = var.min_replicas
   max_replicas        = var.max_replicas
   autoscaling_cpu = [{
-    target = 0.5
+    target = var.autoscaling_cpu_percent
   }]
 
   named_ports = [
@@ -85,7 +80,7 @@ module "http_lb" {
   source  = "GoogleCloudPlatform/lb-http/google"
   version = "6.3.0"
 
-  name    = "${var.deployment_name}http-lb"
+  name    = "${var.mig_name}-http-lb"
   project = var.project_id
 
   backends = {
