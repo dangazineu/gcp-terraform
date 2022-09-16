@@ -20,6 +20,12 @@ variable "zone" {
   default     = "us-central1-c"
 }
 
+variable "name" {
+  type        = string
+  description = "Prefix name to use for the deployments."
+  default     = "tomcat"
+}
+
 variable "create_postgres_db" {
   type        = bool
   description = "If true, creates private PostgreSQL DB on the VPC."
@@ -43,4 +49,10 @@ variable "database_password" {
   sensitive   = true
   description = "Password for an extra user on the database."
   default     = null
+}
+
+variable "db_tier" {
+  type        = string
+  description = "Hardware tier for the DB."
+  default     = "db-f1-micro"
 }

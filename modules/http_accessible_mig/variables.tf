@@ -1,33 +1,64 @@
 variable "http_port" {
   type        = number
-  description = "The http port where Tomcat will be listening"
-  default     = 8080
+  description = "The http port where your http application is listening."
+  default     = 80
 }
 
 variable "project_id" {
   type        = string
-  description = "The GCP project ID"
+  description = "The GCP project ID."
 }
 
 variable "region" {
-  type = string
+  type        = string
+  description = "The GCP region to deploy resources in."
 }
 
-variable "deployment_name" {
+variable "mig_name" {
   type        = string
-  description = "An optional prefix used for all resource names deployed by this module"
-  default     = ""
+  description = "The name of the managed instance group. Other names are derived from this name."
 }
 
 variable "startup_script" {
   type        = string
-  description = "The path for a startup script to be executed by each VM as they come up"
-  default     = ""
+  description = "A shell script to be executed by each VM as they are created."
+  default     = null
 }
 
 variable "health_check_path" {
-  type    = string
-  default = "/"
+  type        = string
+  description = "The path to check on your http server for 200 responses to determine if the application is running and healthy."
+  default     = "/"
+}
+
+variable "source_image_family" {
+  type        = string
+  description = "Source disk image. If neither source_image nor source_image_family is specified, defaults to the latest public Debian image."
+  default     = "debian-11"
+}
+
+variable "source_image_project" {
+  type        = string
+  description = "Source image family. If neither source_image nor source_image_family is specified, defaults to the latest public Debian image."
+  default     = "debian-cloud"
+}
+
+variable "service_account_email" {
+  type        = string
+  description = "Service account to attach to the instance."
+  default     = ""
+}
+
+variable "tags" {
+  type        = list(string)
+  description = "Network tags."
+  default     = []
+}
+
+variable "autoscaling_cpu_percent" {
+  type        = number
+  description = "The CPU usage threshold to use to initiate a scale up or down."
+  default     = 0.5
 }
 
 variable "network" {
@@ -37,18 +68,18 @@ variable "network" {
 
 variable "subnet" {
   type        = string
-  description = "Identifier for the network subnet to attach the mig to."
+  description = "Identifier for the network subnet to attach the mig to. If not specified, will round-robin through subnets in the network."
   default     = null
 }
 
 variable "min_replicas" {
   type        = number
-  description = "Number of VMs in the MIG when fully autoscaled down."
+  description = "Number of VMs in the MIG when fully scaled down."
   default     = 1
 }
 
 variable "max_replicas" {
   type        = number
-  description = "Number of VMs in the MIG when fully autoscaled up."
+  description = "Number of VMs in the MIG when fully scaled up."
   default     = 10
 }

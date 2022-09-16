@@ -15,6 +15,12 @@ variable "zone" {
   default     = "us-central1-c"
 }
 
+variable "name" {
+  type        = string
+  description = "Prefix name to use for the deployments."
+  default     = "tomcat"
+}
+
 variable "http_port" {
   type        = number
   description = "The http port where the application will be listening"
@@ -29,4 +35,10 @@ variable "app_location" {
 variable "health_check_path" {
   type    = string
   default = "/"
+}
+
+variable "db_tier" {
+  type        = string
+  description = "Hardware tier for the DB."
+  default     = "db-f1-micro"
 }

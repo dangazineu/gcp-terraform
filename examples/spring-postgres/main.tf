@@ -26,11 +26,15 @@ resource "google_project_service" "sqladmin_api" {
 ###################
 
 module "vpc_with_nat" {
-  source          = "../../modules/vpc_with_nat"
-  project_id      = var.project_id
-  region          = var.region
-  deployment_name = "spring-app-"
-  depends_on      = [google_project_service.compute_api]
+  source       = "../../modules/vpc_with_nat"
+  project_id   = var.project_id
+  network_name = var.name
+
+  iap_ssh_tag                   = "iap-ssh"
+  enable_default_firewall_rules = true
+  router_region                 = var.region
+
+  depends_on = [google_project_service.compute_api]
 }
 
 resource "google_compute_global_address" "google-managed-services-range" {
@@ -52,13 +56,13 @@ resource "google_service_networking_connection" "private_service_access" {
 module "db" {
   source               = "GoogleCloudPlatform/sql-db/google//modules/postgresql"
   version              = "12.0.0"
-  name                 = "spring-app-postgres-db"
+  name                 = "${var.name}-postgres-db"
   random_instance_name = true
   database_version     = "POSTGRES_9_6"
   project_id           = var.project_id
   zone                 = var.zone
   region               = var.region
-  tier                 = "db-custom-1-3840"
+  tier                 = var.db_tier
 
   deletion_protection = false
 
@@ -74,7 +78,7 @@ module "db" {
 
 module "staged_binary" {
   source      = "../../modules/file_storage_bucket"
-  bucket_name = "spring-app-binary-staging-storage-bucket"
+  bucket_name = "${var.name}-binary-staging-storage-bucket"
   project_id  = var.project_id
   location    = var.region
   files = [
@@ -99,13 +103,16 @@ data "template_file" "startup_script" {
 }
 
 module "app_cluster" {
-  source            = "../../modules/http_accessible_mig"
-  project_id        = var.project_id
-  region            = var.region
-  deployment_name   = "spring-app-"
+  source     = "../../modules/http_accessible_mig"
+  project_id = var.project_id
+  region     = var.region
+  mig_name   = var.name
+  network    = module.vpc_with_nat.network_self_link
+
   startup_script    = data.template_file.startup_script.rendered
+  tags              = ["iap-ssh"]
   health_check_path = "/getTuples"
-  depends_on        = [google_project_service.compute_api, module.staged_binary, module.db]
-  network           = module.vpc_with_nat.network.self_link
-  subnet            = module.vpc_with_nat.subnets.self_link
+  http_port         = 8080
+
+  depends_on = [google_project_service.compute_api, module.db]
 }
