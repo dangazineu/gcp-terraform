@@ -38,6 +38,7 @@ variable "network" {
 variable "subnet" {
   type        = string
   description = "Identifier for the network subnet to attach the mig to."
+  default     = null
 }
 
 variable "min_replicas" {

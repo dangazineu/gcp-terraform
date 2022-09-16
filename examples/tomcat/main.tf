@@ -42,11 +42,15 @@ data "template_file" "startup_script" {
 }
 
 module "vpc_with_nat" {
-  source          = "../../modules/vpc_with_nat"
-  project_id      = var.project_id
-  region          = var.region
-  deployment_name = "tomcat-"
-  depends_on      = [google_project_service.compute_api]
+  source       = "../../modules/vpc_with_nat"
+  project_id   = var.project_id
+  network_name = "tomcat"
+
+  iap_ssh_tag                   = "iap-ssh"
+  enable_default_firewall_rules = true
+  router_region                 = var.region
+
+  depends_on = [google_project_service.compute_api]
 }
 
 module "tomcat_cluster" {
@@ -58,5 +62,4 @@ module "tomcat_cluster" {
   depends_on        = [google_project_service.compute_api, module.staged_binary]
   health_check_path = "/healthz/"
   network           = module.vpc_with_nat.network_self_link
-  subnet            = module.vpc_with_nat.subnet_self_link
 }
