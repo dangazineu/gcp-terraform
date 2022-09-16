@@ -106,6 +106,6 @@ module "app_cluster" {
   startup_script    = data.template_file.startup_script.rendered
   health_check_path = "/getTuples"
   depends_on        = [google_project_service.compute_api, module.staged_binary, module.db]
-  network           = module.vpc_with_nat.network_self_link
-  subnet            = module.vpc_with_nat.subnet_self_link
+  network           = module.vpc_with_nat.network.self_link
+  subnet            = module.vpc_with_nat.subnets.self_link
 }
