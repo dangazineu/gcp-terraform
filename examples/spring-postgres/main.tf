@@ -93,7 +93,7 @@ module "staged_binary" {
 data "template_file" "startup_script" {
   template = file("install_app.sh.tpl")
   vars = {
-    STAGED_BINARY      = module.staged_binary.gs_url
+    STAGED_BINARY      = module.staged_binary.gs_urls[0]
     DB_USERNAME        = "default"
     DB_PASSWORD        = module.db.generated_user_password
     DB_NAME            = "default"
