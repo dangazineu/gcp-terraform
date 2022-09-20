@@ -1,17 +1,17 @@
 output "external_ip" {
-  value = module.app_cluster.external_ip
+  value = module.app_cluster.lb_external_ip
 }
 
 output "application_url" {
-  value = "http://${module.app_cluster.external_ip}/getTuples"
+  value = "http://${module.app_cluster.lb_external_ip}/getTuples"
 }
 
 output "health_check_results" {
-  value = "Wait for VMs to show as healthy in this page: https://console.cloud.google.com/compute/instanceGroups/details/${var.region}/${module.app_cluster.name}?project=${var.project_id}"
+  value = "Wait for VMs to show as healthy in this page: https://console.cloud.google.com/compute/instanceGroups/details/${var.region}/${module.app_cluster.mig_name}?project=${var.project_id}"
 }
 
 output "binary_gs_url" {
-  value = module.staged_binary.gs_url
+  value = module.staged_binary.gs_urls[0]
 }
 
 output "db_instance_connection_name" {
