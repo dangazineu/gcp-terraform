@@ -23,11 +23,13 @@ module "mig" {
   source  = "terraform-google-modules/vm/google//modules/mig"
   version = "7.8.0"
 
+  for_each = toset(var.regions)
+
   project_id        = var.project_id
   instance_template = module.mig_template.self_link
-  region            = var.region
-  hostname          = "${var.mig_name}-vm"
-  mig_name          = var.mig_name
+  region            = each.key
+  hostname          = "${var.mig_name}-${each.key}-vm"
+  mig_name          = "${var.mig_name}-${each.key}"
 
   network    = var.network
   subnetwork = var.subnet
@@ -114,21 +116,19 @@ module "http_lb" {
         sample_rate = null
       }
 
-      groups = [
-        {
-          group                        = module.mig.instance_group
-          balancing_mode               = null
-          capacity_scaler              = null
-          description                  = null
-          max_connections              = null
-          max_connections_per_instance = null
-          max_connections_per_endpoint = null
-          max_rate                     = null
-          max_rate_per_instance        = null
-          max_rate_per_endpoint        = null
-          max_utilization              = null
-        }
-      ]
+      groups = [for mig in module.mig : {
+        group                        = mig.instance_group
+        balancing_mode               = null
+        capacity_scaler              = null
+        description                  = null
+        max_connections              = null
+        max_connections_per_instance = null
+        max_connections_per_endpoint = null
+        max_rate                     = null
+        max_rate_per_instance        = null
+        max_rate_per_endpoint        = null
+        max_utilization              = null
+      }]
 
       iap_config = {
         enable               = false

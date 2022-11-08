@@ -9,9 +9,9 @@ variable "project_id" {
   description = "The GCP project ID."
 }
 
-variable "region" {
-  type        = string
-  description = "The GCP region to deploy resources in."
+variable "regions" {
+  type        = list(string)
+  description = "The GCP regions to deploy migs in. At least one is required for this to work."
 }
 
 variable "mig_name" {
@@ -74,12 +74,12 @@ variable "subnet" {
 
 variable "min_replicas" {
   type        = number
-  description = "Number of VMs in the MIG when fully scaled down."
+  description = "Number of VMs in each MIG when fully scaled down."
   default     = 1
 }
 
 variable "max_replicas" {
   type        = number
-  description = "Number of VMs in the MIG when fully scaled up."
+  description = "Number of VMs in each MIG when fully scaled up."
   default     = 10
 }

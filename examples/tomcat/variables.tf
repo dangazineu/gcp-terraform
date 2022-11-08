@@ -14,6 +14,12 @@ variable "region" {
   default     = "us-central1"
 }
 
+variable "mig_regions" {
+  type        = list(string)
+  description = "GCP regions to deploy MIGs to."
+  default     = ["us-central1", "us-west2"]
+}
+
 variable "zone" {
   type        = string
   description = "GCP zone to deploy resources to. Must be a zone in the chosen region."
