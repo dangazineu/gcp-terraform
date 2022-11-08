@@ -57,7 +57,7 @@ module "vpc_with_nat" {
 module "tomcat_cluster" {
   source     = "../../modules/http_accessible_mig"
   project_id = var.project_id
-  region     = var.region
+  regions    = [var.region]
   mig_name   = var.name
   network    = module.vpc_with_nat.network_self_link
 
