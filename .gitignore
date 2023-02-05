@@ -4,10 +4,14 @@
 
 .idea/*
 *.iml
+**/.idea/*
 
 # .tfstate files
 *.tfstate
 *.tfstate.*
+
+# skipping .tfvars files to prevent leaking secrets
+*.tfvars
 
 # Crash log files
 crash.log
