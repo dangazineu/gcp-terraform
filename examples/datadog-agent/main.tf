@@ -100,4 +100,6 @@ resource "google_compute_instance" "datadog_agent_vm" {
     email  = google_service_account.datadog_account.email
     scopes = ["cloud-platform"]
   }
+
+  depends_on = [google_project_service.compute_api, google_service_account.datadog_account]
 }
